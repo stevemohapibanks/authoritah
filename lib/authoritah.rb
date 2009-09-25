@@ -17,22 +17,16 @@ module Authoritah
     module ClassMethods
       
       def permits(*args)
-        options = args.extract_options!
-        actions = options.delete(:to)
-        
-        check_role_selectors(options)
-        
-        role_method     = options.first[0]
-        role_predicate  = options.first[1]
-        
-        controller_permissions[controller_name.to_sym] ||= PermissionSet.new
-        controller_permissions[controller_name.to_sym] <<
-          {:type => :permit, :role_method => role_method, :role_predicate => role_predicate, :actions => actions ? Array(actions) : nil}
+        apply_declaration(:permit, :to, args)
       end
       
       def forbids(*args)
+        apply_declaration(:forbid, :from, args)
+      end
+      
+      def apply_declaration(perm_type, action_identifier, args)
         options = args.extract_options!
-        actions = options.delete(:from)
+        actions = options.delete(action_identifier)
         
         check_role_selectors(options)
         
@@ -41,7 +35,7 @@ module Authoritah
         
         controller_permissions[controller_name.to_sym] ||= PermissionSet.new
         controller_permissions[controller_name.to_sym] <<
-          {:type => :forbid, :role_method => role_method, :role_predicate => role_predicate, :actions => actions ? Array(actions) : nil}
+          {:type => perm_type, :role_method => role_method, :role_predicate => role_predicate, :actions => actions ? Array(actions) : nil}
       end
       
       def this_controllers_permissions
