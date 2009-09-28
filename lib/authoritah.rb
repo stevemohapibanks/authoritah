@@ -30,8 +30,8 @@ module Authoritah
         
         check_role_selectors(options)
         
-        role_method     = options.first[0]
-        role_predicate  = options.first[1]
+        role_method     = options.to_a.first[0]
+        role_predicate  = options.to_a.first[1]
         
         controller_permissions[controller_name.to_sym] ||= PermissionSet.new
         controller_permissions[controller_name.to_sym] <<

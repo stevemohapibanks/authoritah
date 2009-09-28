@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{authoritah}
-  s.version = "0.0.3"
+  s.version = "0.0.4"
 
   s.authors = ["Steven Mohapi-Banks"]
   s.date = %q{2009-09-28}
@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.4}
   s.summary = %q{A really simple authorization plugin for Rails.}
-  s.description = %q{A really simple authorization plugin for Rails.}
+  s.description = %q{A description of a really simple authorization plugin for Rails.}
   s.test_files = [
     'spec/authoritah_spec.rb',
     'spec/spec_helper.rb',
@@ -41,4 +41,7 @@ Gem::Specification.new do |s|
     'spec/railsenv/config/locales/en.yml',
     'spec/railsenv/config/routes.rb'
   ]
+  spec.add_development_dependency('rspec', '>= 1.2.8')
+  spec.add_development_dependency('rspec-rails', '>= 1.2.7.1')
+  spec.add_development_dependency('mocha', '>= 0.9.8')
 end
