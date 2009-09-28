@@ -125,3 +125,5 @@ module Authoritah
     
   end
 end
+
+ActionController::Base.send(:include, Authoritah::Controller)

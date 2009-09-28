@@ -2,10 +2,10 @@
 
 Gem::Specification.new do |s|
   s.name = %q{authoritah}
-  s.version = "0.0.2"
+  s.version = "0.0.3"
 
   s.authors = ["Steven Mohapi-Banks"]
-  s.date = %q{2009-09-24}
+  s.date = %q{2009-09-28}
   s.email = %q{steven.mohapibanks@me.com}
   s.extra_rdoc_files = [
     "LICENSE",
