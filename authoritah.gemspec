@@ -41,7 +41,7 @@ Gem::Specification.new do |s|
     'spec/railsenv/config/locales/en.yml',
     'spec/railsenv/config/routes.rb'
   ]
-  spec.add_development_dependency('rspec', '>= 1.2.8')
-  spec.add_development_dependency('rspec-rails', '>= 1.2.7.1')
-  spec.add_development_dependency('mocha', '>= 0.9.8')
+  s.add_development_dependency('rspec', '>= 1.2.8')
+  s.add_development_dependency('rspec-rails', '>= 1.2.7.1')
+  s.add_development_dependency('mocha', '>= 0.9.8')
 end
