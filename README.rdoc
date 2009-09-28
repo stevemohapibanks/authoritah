@@ -4,11 +4,11 @@ A stupidly simple authorization gem for Rails.
 
 ==Installation
 
-Make sure Github is in your repo sources:
-  $ gem sources -a http://gems.github.com
+Make sure Gemcutter is in your repo sources:
+  $ gem sources -a http://gems.gemcutter.org
   
 Installation:
-  $ sudo gem install indmill-authoritah
+  $ sudo gem install authoritah
   
 ==Usage
 
