@@ -19,15 +19,20 @@ By default (i.e. when no Authoritah declarations are made) all requests are allo
     permits :current_user => :admin?
   end
   
-This is a wildcard rule. It assumes you have a method on your controller called "current_user" (as something like restful_authentication or authlogic would provide) that returns an object that can respond to an admin? message - the rule will pass if admin? returns true. Once a permit rule is defined access to the actions of this controller are ONLY permitted if you fulfill the predicate. 
+This is a wildcard rule. It assumes you have a method on your controller called "current_user" (as something like restful_authentication or authlogic would provide) that returns an object that can respond to an admin? message - the rule will pass if admin? returns true (or more strictly, non-false). Once a permit rule is defined access to the actions of this controller are ONLY permitted if you fulfill the predicate. If you just have a case where you have a method on your controller to check authorisation, you can do the following:
+
+  class WidgetController < ApplicationController
+
+    permits :logged_in?
+  end
+
+What about if we only want to control access to certain actions? Easy, add a :to option and pass it an action or array of actions. You can add as many rules and scope them by action - Authoritah will ensure that a request is only permitted if all rules for a given action pass.
 
   class WidgetController < ApplicationController
 
     permits :current_user => :admin?, :to => [:create, :destroy]
     permits :current_user => :logged_in?, :to => :show
   end
-
-What about if we only want to control access to certain actions? Easy, add a :to option and pass it an action or array of actions. You can add as many rules and scope them by action - Authoritah will ensure that a request is only permitted if all rules for a given action pass.
 
 You also have the ability to expressly forbid access using the forbids directive:
 
