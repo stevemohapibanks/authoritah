@@ -26,10 +26,11 @@ module Authoritah
       
       def apply_declaration(perm_type, action_identifier, args)
         options = args.extract_options!
+        args.each {|a| options[a] = nil}
         actions = options.delete(action_identifier)
         
         check_role_selectors(options)
-        
+
         role_method     = options.to_a.first[0]
         role_predicate  = options.to_a.first[1]
         
@@ -113,6 +114,8 @@ module Authoritah
                 controller.send(permission[:role_method]).send(permission[:role_predicate])
               elsif permission[:role_predicate].is_a? Proc
                 permission[:role_predicate].call(controller.send(permission[:role_method]))
+              elsif permission[:role_predicate] == nil
+                controller.send(permission[:role_method])
               else
                 false
               end

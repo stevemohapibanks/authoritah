@@ -26,6 +26,17 @@ describe Authoritah::Controller do
       TestAuthorizerController.permits(:current_user => :logged_in?, :another_user => :logged_out?)
     end.should raise_error(Authoritah::Controller::OptionsError)
   end
+  
+  describe "a basic permits wildcard rule with no predicate" do
+    before(:each) do
+      TestAuthorizerController.permits(:current_user)
+      @permissions = TestAuthorizerController.send(:controller_permissions)[:test_authorizer]
+    end
+    it "should have one permission" do @permissions.size.should == 1 end
+    it "should use current_user to retrieve the 'role object'" do @permissions.first[:role_method].should == :current_user end
+    it "should have nil predicate method" do @permissions.first[:role_predicate].should == nil end
+    it "should not specify the actions" do @permissions.first[:actions].should == [:all] end
+  end
     
   describe "a basic permits wildcard rule" do
     before(:each) do
@@ -70,6 +81,32 @@ describe TestAuthorizerController, :type => :controller do
   end
   
   describe "specifying permit rules" do
+    context "with a wildcard permission (no predicate)" do
+      before(:each) do
+        TestAuthorizerController.permits(:current_user)
+      end
+
+      context "a user exists" do
+        before(:each) do
+          controller.stubs(:current_user => true)
+        end
+        it "should render index" do
+          get :index
+          response.should render_template('index')
+        end
+      end
+      context "an unauthenticated user" do
+        before(:each) do
+          controller.stubs(:current_user => false)
+        end
+        it "should receive a 404" do
+          get :index
+          response.status.should == "404 Not Found"
+          response.should render_template(File.join(RAILS_ROOT, 'public', '/404.html'))
+        end
+      end
+    end
+    
     context "with a wildcard permission" do
       before(:each) do
         TestAuthorizerController.permits(:current_user => :logged_in?)
