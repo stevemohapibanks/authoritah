@@ -244,4 +244,16 @@ describe TestAuthorizerController, :type => :controller do
       end
     end
   end
+  
+  describe "overriding check_permissions" do
+    before(:each) do
+      TestAuthorizerController.permits(:current_user => :logged_in?)
+      TestAuthorizerController.send(:define_method, :check_permissions) do
+        return true if permitted?(action_name.to_sym)
+        redirect_to root_url
+        false
+      end
+    end
+    it "should redirect to / instead of rendering /404.html" do get :index; response.should redirect_to(root_url) end
+  end
 end
