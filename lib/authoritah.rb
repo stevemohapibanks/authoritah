@@ -1,3 +1,4 @@
+require 'ruby-debug'
 module Authoritah
   module Controller
 
@@ -28,6 +29,9 @@ module Authoritah
         options = args.extract_options!
         args.each {|a| options[a] = nil}
         actions = options.delete(action_identifier)
+        on_reject = options.delete(:on_reject) || :render_404
+        
+        raise ":on_reject must be a symbol or a Proc" unless on_reject.is_a?(Symbol) || on_reject.is_a?(Proc)
         
         check_role_selectors(options)
 
@@ -35,8 +39,13 @@ module Authoritah
         role_predicate  = options.to_a.first[1]
         
         controller_permissions[controller_name.to_sym] ||= PermissionSet.new
-        controller_permissions[controller_name.to_sym] <<
-          {:type => perm_type, :role_method => role_method, :role_predicate => role_predicate, :actions => actions ? Array(actions) : nil}
+        controller_permissions[controller_name.to_sym] << {
+          :type => perm_type,
+          :role_method => role_method,
+          :role_predicate => role_predicate,
+          :actions => actions ? Array(actions) : nil,
+          :on_reject => on_reject
+        }
       end
       
       def this_controllers_permissions
@@ -61,16 +70,18 @@ module Authoritah
     module InstanceMethods
 
       def check_permissions
-        return true if permitted?(action_name.to_sym)
-        render(:file => File.join(RAILS_ROOT, 'public', '404.html'), :status => 404) 
-        false
+        permitted?(action_name.to_sym)
       end
       
       protected
       
+        def render_404
+          render(:file => File.join(RAILS_ROOT, 'public', '404.html'), :status => 404)
+        end
+      
         def permitted?(action)
           return true unless permissions = self.class.this_controllers_permissions
-          permissions.permits?(self, action) && !permissions.forbids?(self, action)
+          permissions.permits?(self, action)
         end
     end
     
@@ -90,39 +101,53 @@ module Authoritah
       end
       
       def permits?(controller, action)
-        apply_rules(:permit, controller, action).include?(false) == false
+        permitted, on_reject_action = apply_rule_chain(:permit, controller, action)
+        if permitted
+          return true
+        else
+          controller.send(on_reject_action)
+          return false
+        end
       end
 
-      def forbids?(controller, action)
-        apply_rules(:forbid, controller, action).include?(true)
-      end
-      
       def permissions
         @permissions ||= []
       end
       
       protected
-      
-        def apply_rules(rule_type, controller, action)
-          permissions.select{|p| 
-            p[:type] == rule_type
-          }.select{|p| 
-            p[:actions].include?(action) || p[:actions].include?(:all)
-          }.map do |permission|
+        
+        # Returns [true, nil] if the rule chain applied without a problem.
+        # Returns [false, :reject_to]
+        def apply_rule_chain(rule_type, controller, action)
+          select_permissions_for(action).each do |permission|
             begin
-              if permission[:role_predicate].is_a? Symbol
+              response = if permission[:role_predicate].is_a? Symbol
                 controller.send(permission[:role_method]).send(permission[:role_predicate])
               elsif permission[:role_predicate].is_a? Proc
                 permission[:role_predicate].call(controller.send(permission[:role_method]))
               elsif permission[:role_predicate] == nil
                 controller.send(permission[:role_method])
-              else
-                false
               end
+              response = !response if permission[:type] == :forbid
+
+              # puts "Permission predicate is: " + permission[:role_predicate].to_s
+              # puts "Permission method is: " + permission[:role_method].to_s
+              # puts "Permission type is: " + permission[:type].to_s
+              # puts "Permission reject action is: " + permission[:on_reject].to_s
+              # puts "Permission response is: " + response.to_s              
+              
+              return [false, permission[:on_reject]] unless response
             rescue
-              false
+              return [permission[:type] == :forbid, permission[:on_reject]]
             end
           end
+          [true, nil]
+        end
+                
+        def select_permissions_for(action)
+          permissions.select{|p| 
+             p[:actions].include?(action) || p[:actions].include?(:all)
+           }
         end
     end
     

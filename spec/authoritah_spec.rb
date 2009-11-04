@@ -200,6 +200,9 @@ describe TestAuthorizerController, :type => :controller do
         end
       end
       context "an unauthenticated user" do
+        before(:each) do
+          controller.stubs(:current_user => false)
+        end
         it "should render index" do get :index; response.should render_template('index') end
       end
     end
@@ -245,15 +248,66 @@ describe TestAuthorizerController, :type => :controller do
     end
   end
   
-  describe "overriding check_permissions" do
-    before(:each) do
-      TestAuthorizerController.permits(:current_user => :logged_in?)
-      TestAuthorizerController.send(:define_method, :check_permissions) do
-        return true if permitted?(action_name.to_sym)
-        redirect_to root_url
-        false
+  describe "specifying a different action to run on failure" do
+    
+    it "should check that :on_reject is a Proc or Symbol" do
+      lambda do
+        TestAuthorizerController.permits(:current_user => :logged_in?, :on_reject => :method)
+      end.should_not raise_error
+      lambda do
+        TestAuthorizerController.permits(:current_user => :logged_in?, :on_reject => Proc.new {})
+      end.should_not raise_error
+      lambda do
+        TestAuthorizerController.permits(:current_user => :logged_in?, :on_reject => 5)
+      end.should raise_error
+    end
+    
+    context "when :on_reject => :set_flash_and_redirect" do
+      before(:each) do
+        TestAuthorizerController.permits(:current_user => :logged_in?, :on_reject => :set_flash_and_redirect)
+        TestAuthorizerController.send(:define_method, :set_flash_and_redirect) do
+          flash[:error] = "You need to be logged in to do that"
+          redirect_to root_url
+        end
+      end
+      context "a logged in user" do
+        before(:each) do
+          controller.stubs(:current_user => stub(:logged_in? => true))
+        end
+      end
+      context "an unauthenticated user" do
+        it "should redirect to /" do
+          get :index
+          response.should redirect_to(root_url)
+        end
+        it "should set the flash" do
+          get :index
+          flash[:error].should == "You need to be logged in to do that"
+        end
       end
     end
-    it "should redirect to / instead of rendering /404.html" do get :index; response.should redirect_to(root_url) end
+    
+    context "with multiple rules" do
+      before(:each) do
+        TestAuthorizerController.permits(:current_user => :logged_in?)
+        TestAuthorizerController.forbids(:current_user => :blacklisted?, :on_reject => :set_blacklisted)
+        TestAuthorizerController.send(:define_method, :set_blacklisted) do
+          flash[:error] = "You can't be blacklisted to do that"
+          redirect_to '/blacklisted'
+        end
+      end
+      
+      context "as a blacklisted user" do
+        before(:each) do
+          controller.stubs(:current_user => stub(:logged_in? => true, :blacklisted? => true))
+        end
+        it 'should redirect to /blacklisted' do
+          get :index
+          response.should redirect_to('/blacklisted')
+        end
+      end
+      
+    end
   end
+
 end
