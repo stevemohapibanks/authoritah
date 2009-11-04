@@ -44,7 +44,7 @@ You also have the ability to expressly forbid access using the forbids directive
 
 In this scenario any logged in user can access the controller actions, but any user responding true to blacklisted? will be forbidden from running the :create or :destroy actions.
 
-The final feature so far is the ability to pass a Proc as the predicate:
+You can also pass a Proc as the predicate:
 
   class WidgetController < ApplicationController
 
@@ -53,4 +53,15 @@ The final feature so far is the ability to pass a Proc as the predicate:
 
 The Proc gets passed the result of the :current_user message to the controller for you to specify more complex rules.
 
-This is VERY early and probably has a legion of bugs, but there's a good spread of specs and I'll be improving it over the coming days. Thanks for watching.
+I've also now added the ability to customise how the user is using the :on_reject option. You can either pass it a symbol identifying a method to call, or a Proc:
+
+  class WidgetController < ApplicationController
+
+    permits :current_user => :logged_in?, :on_reject => :redirect_to_login
+    forbids :current_user => :blacklisted?, :from => [:create, :destroy], :on_reject => Proc.new { redirect_to '/blacklisted' }
+    
+    def redirect_to_login
+      flash[:notice] = "Please login to view widgets"
+      redirect_to root_url
+    end
+  end

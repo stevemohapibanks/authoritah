@@ -2,10 +2,10 @@
 
 Gem::Specification.new do |s|
   s.name = %q{authoritah}
-  s.version = "0.0.5"
+  s.version = "0.1.0"
 
   s.authors = ["Steven Mohapi-Banks"]
-  s.date = %q{2009-10-05}
+  s.date = %q{2009-11-04}
   s.email = %q{steven.mohapibanks@me.com}
   s.extra_rdoc_files = [
     "LICENSE",
@@ -39,7 +39,7 @@ Gem::Specification.new do |s|
     'spec/railsenv/config/locales/en.yml',
     'spec/railsenv/config/routes.rb'
   ]
-  s.add_development_dependency('rspec', '>= 1.2.8')
-  s.add_development_dependency('rspec-rails', '>= 1.2.7.1')
+  s.add_development_dependency('rspec', '>= 1.2.9')
+  s.add_development_dependency('rspec-rails', '>= 1.2.9')
   s.add_development_dependency('mocha', '>= 0.9.8')
 end
