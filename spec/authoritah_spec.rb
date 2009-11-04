@@ -1,5 +1,5 @@
 require File.dirname(__FILE__) + '/spec_helper'
-
+require 'ruby-debug'
 describe Authoritah::Controller do
   
   before(:each) do
@@ -270,11 +270,6 @@ describe TestAuthorizerController, :type => :controller do
           redirect_to root_url
         end
       end
-      context "a logged in user" do
-        before(:each) do
-          controller.stubs(:current_user => stub(:logged_in? => true))
-        end
-      end
       context "an unauthenticated user" do
         it "should redirect to /" do
           get :index
@@ -283,6 +278,18 @@ describe TestAuthorizerController, :type => :controller do
         it "should set the flash" do
           get :index
           flash[:error].should == "You need to be logged in to do that"
+        end
+      end
+    end
+    
+    context "when :on_reject => Proc" do
+      before(:each) do
+        TestAuthorizerController.permits(:current_user => :logged_in?, :on_reject => Proc.new { redirect_to root_url })
+      end
+      context "an unauthenticated user" do
+        it "should redirect to /" do
+          get :index
+          response.should redirect_to(root_url)
         end
       end
     end

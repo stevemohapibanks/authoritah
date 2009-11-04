@@ -1,4 +1,3 @@
-require 'ruby-debug'
 module Authoritah
   module Controller
 
@@ -105,7 +104,13 @@ module Authoritah
         if permitted
           return true
         else
-          controller.send(on_reject_action)
+          if on_reject_action.is_a?(Proc)
+            # debugger
+            # on_reject_action.call(controller)
+            controller.instance_eval(&on_reject_action)
+          else
+            controller.send(on_reject_action)
+          end
           return false
         end
       end
@@ -129,13 +134,6 @@ module Authoritah
                 controller.send(permission[:role_method])
               end
               response = !response if permission[:type] == :forbid
-
-              # puts "Permission predicate is: " + permission[:role_predicate].to_s
-              # puts "Permission method is: " + permission[:role_method].to_s
-              # puts "Permission type is: " + permission[:type].to_s
-              # puts "Permission reject action is: " + permission[:on_reject].to_s
-              # puts "Permission response is: " + response.to_s              
-              
               return [false, permission[:on_reject]] unless response
             rescue
               return [permission[:type] == :forbid, permission[:on_reject]]
