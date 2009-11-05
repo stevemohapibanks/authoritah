@@ -246,6 +246,29 @@ describe TestAuthorizerController, :type => :controller do
         it "should render index" do get :index; response.should render_template('index') end
       end
     end
+    context "that accesses controller environment" do
+      before(:each) do
+        TestAuthorizerController.permits(:current_user => Proc.new {|u| u.id == params[:id]})
+      end
+      context "a logged in user with the correct ID" do
+        before(:each) do
+          controller.stubs(:current_user => stub(:logged_in? => true, :id => "100"))
+        end
+        it "should render show" do
+          get :show, :id => "100"
+          response.should render_template('show')
+        end
+      end
+      context "a logged in user with the wrong ID" do
+        before(:each) do
+          controller.stubs(:current_user => stub(:logged_in? => true, :id => "200"))
+        end
+        it "should render show" do
+          get :show, :id => "100"
+          response.status.should == "404 Not Found"
+        end
+      end
+    end
   end
   
   describe "specifying a different action to run on failure" do
