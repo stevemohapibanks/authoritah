@@ -234,10 +234,10 @@ describe TestAuthorizerController, :type => :controller do
     end
   end
   
-  describe "using a Proc" do
+  describe "using a lambda" do
     context "with a wildcard rule" do
       before(:each) do
-        TestAuthorizerController.permits(:current_user => Proc.new {|u| u.logged_in?})
+        TestAuthorizerController.permits(:current_user => lambda {|u| u.logged_in?})
       end
       context "a logged in user" do
         before(:each) do
@@ -248,22 +248,23 @@ describe TestAuthorizerController, :type => :controller do
     end
     context "that accesses controller environment" do
       before(:each) do
-        TestAuthorizerController.permits(:current_user => Proc.new {|u| u.id == params[:id]})
-      end
-      context "a logged in user with the correct ID" do
-        before(:each) do
-          controller.stubs(:current_user => stub(:logged_in? => true, :id => "100"))
+        TestAuthorizerController.class_eval do
+          define_method(:user_is_allowed?) { |user| true }
         end
+        @user = stub(:logged_in? => true)
+        controller.stubs(:current_user => @user)
+        TestAuthorizerController.permits(:current_user => lambda {|u| user_is_allowed?(u) })
+      end
+      context "an allowed_user" do
         it "should render show" do
+          controller.expects(:user_is_allowed?).at_least_once.with(@user).returns(true)
           get :show, :id => "100"
           response.should render_template('show')
         end
       end
       context "a logged in user with the wrong ID" do
-        before(:each) do
-          controller.stubs(:current_user => stub(:logged_in? => true, :id => "200"))
-        end
         it "should render show" do
+          controller.expects(:user_is_allowed?).at_least_once.with(@user).returns(false)
           get :show, :id => "100"
           response.status.should == "404 Not Found"
         end
@@ -278,7 +279,7 @@ describe TestAuthorizerController, :type => :controller do
         TestAuthorizerController.permits(:current_user => :logged_in?, :on_reject => :method)
       end.should_not raise_error
       lambda do
-        TestAuthorizerController.permits(:current_user => :logged_in?, :on_reject => Proc.new {})
+        TestAuthorizerController.permits(:current_user => :logged_in?, :on_reject => lambda {})
       end.should_not raise_error
       lambda do
         TestAuthorizerController.permits(:current_user => :logged_in?, :on_reject => 5)
@@ -305,9 +306,9 @@ describe TestAuthorizerController, :type => :controller do
       end
     end
     
-    context "when :on_reject => Proc" do
+    context "when :on_reject => lambda" do
       before(:each) do
-        TestAuthorizerController.permits(:current_user => :logged_in?, :on_reject => Proc.new { redirect_to root_url })
+        TestAuthorizerController.permits(:current_user => :logged_in?, :on_reject => lambda { redirect_to root_url })
       end
       context "an unauthenticated user" do
         it "should redirect to /" do

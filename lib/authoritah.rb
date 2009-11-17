@@ -105,8 +105,6 @@ module Authoritah
           return true
         else
           if on_reject_action.is_a?(Proc)
-            # debugger
-            # on_reject_action.call(controller)
             controller.instance_eval(&on_reject_action)
           else
             controller.send(on_reject_action)
@@ -122,14 +120,14 @@ module Authoritah
       protected
         
         # Returns [true, nil] if the rule chain applied without a problem.
-        # Returns [false, :reject_to]
+        # Returns [false, :reject_to destination] otherwise
         def apply_rule_chain(rule_type, controller, action)
           select_permissions_for(action).each do |permission|
             begin
               response = if permission[:role_predicate].is_a? Symbol
                 controller.send(permission[:role_method]).send(permission[:role_predicate])
               elsif permission[:role_predicate].is_a? Proc
-                permission[:role_predicate].call(controller.send(permission[:role_method]))
+                controller.instance_exec(controller.send(permission[:role_method]), &permission[:role_predicate])
               elsif permission[:role_predicate] == nil
                 controller.send(permission[:role_method])
               end

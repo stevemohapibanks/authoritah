@@ -28,5 +28,6 @@ class TestAuthorizerController < ActionController::Base
   def show
     render
   end
+
 end
 
