@@ -12,6 +12,8 @@ module Authoritah
       base.send(:include, InstanceMethods)
       
       base.before_filter :check_permissions
+      base.class_inheritable_accessor :controller_permissions
+      base.controller_permissions = PermissionSet.new
     end
     
     module ClassMethods
@@ -37,8 +39,7 @@ module Authoritah
         role_method     = options.to_a.first[0]
         role_predicate  = options.to_a.first[1]
         
-        controller_permissions[controller_name.to_sym] ||= PermissionSet.new
-        controller_permissions[controller_name.to_sym] << {
+        controller_permissions << {
           :type => perm_type,
           :role_method => role_method,
           :role_predicate => role_predicate,
@@ -47,22 +48,14 @@ module Authoritah
         }
       end
       
-      def this_controllers_permissions
-        controller_permissions[controller_name.to_sym]
-      end
-      
       protected
       
         def check_role_selectors(options)
           raise Authoritah::Controller::OptionsError.new("Too many role selectors") if options.size > 1
         end
         
-        def controller_permissions
-          @@controller_permissions ||= {}
-        end
-        
         def clear_permissions
-          @@controller_permissions = {}
+          self.controller_permissions = PermissionSet.new
         end
     end
     
@@ -79,7 +72,7 @@ module Authoritah
         end
       
         def permitted?(action)
-          return true unless permissions = self.class.this_controllers_permissions
+          return true unless permissions = self.controller_permissions
           permissions.permits?(self, action)
         end
     end

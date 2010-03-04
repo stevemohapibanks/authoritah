@@ -31,3 +31,5 @@ class TestAuthorizerController < ActionController::Base
 
 end
 
+class SpecialisedTestAuthorizerController < TestAuthorizerController
+end

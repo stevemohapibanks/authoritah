@@ -5,6 +5,8 @@ describe Authoritah::Controller do
   before(:each) do
     ActionController::Base.send(:include, Authoritah::Controller)
     ActionController::Base.send(:clear_permissions)
+    TestAuthorizerController.send(:clear_permissions)
+    SpecialisedTestAuthorizerController.send(:clear_permissions)
   end
   
   describe "adding methods to controllers" do
@@ -30,7 +32,7 @@ describe Authoritah::Controller do
   describe "a basic permits wildcard rule with no predicate" do
     before(:each) do
       TestAuthorizerController.permits(:current_user)
-      @permissions = TestAuthorizerController.send(:controller_permissions)[:test_authorizer]
+      @permissions = TestAuthorizerController.send(:controller_permissions)
     end
     it "should have one permission" do @permissions.size.should == 1 end
     it "should use current_user to retrieve the 'role object'" do @permissions.first[:role_method].should == :current_user end
@@ -41,9 +43,11 @@ describe Authoritah::Controller do
   describe "a basic permits wildcard rule" do
     before(:each) do
       TestAuthorizerController.permits(:current_user => :logged_in?)
-      @permissions = TestAuthorizerController.send(:controller_permissions)[:test_authorizer]
+      @permissions = TestAuthorizerController.send(:controller_permissions)
     end
-    it "should have one permission" do @permissions.size.should == 1 end
+    it "should have one permission" do
+      @permissions.size.should == 1 
+    end
     it "should use current_user to retrieve the 'role object'" do @permissions.first[:role_method].should == :current_user end
     it "should use logged_in? as the predicate to call on the 'role object'" do @permissions.first[:role_predicate].should == :logged_in? end
     it "should not specify the actions" do @permissions.first[:actions].should == [:all] end
@@ -52,7 +56,7 @@ describe Authoritah::Controller do
   describe "a basic permits rule on a single action" do
     before(:each) do
       TestAuthorizerController.permits(:current_user => :logged_in?, :to => :show)
-      @permissions = TestAuthorizerController.send(:controller_permissions)[:test_authorizer]
+      @permissions = TestAuthorizerController.send(:controller_permissions)
     end
     it "should have one permission" do @permissions.size.should == 1 end
     it "should use current_user to retrieve the 'role object'" do @permissions.first[:role_method].should == :current_user end
@@ -63,7 +67,7 @@ describe Authoritah::Controller do
   describe "a basic rule on many actions" do
     before(:each) do
       TestAuthorizerController.permits(:current_user => :logged_in?, :to => [:show, :create, :update])
-      @permissions = TestAuthorizerController.send(:controller_permissions)[:test_authorizer]
+      @permissions = TestAuthorizerController.send(:controller_permissions)
     end
     it "should specify the actions" do @permissions.first[:actions].should == [:show, :create, :update] end
   end
@@ -74,10 +78,23 @@ describe TestAuthorizerController, :type => :controller do
   before(:each) do
     TestAuthorizerController.send(:include, Authoritah::Controller)
     TestAuthorizerController.send(:clear_permissions)
+    SpecialisedTestAuthorizerController.send(:include, Authoritah::Controller)
+    SpecialisedTestAuthorizerController.send(:clear_permissions)
   end
   
   context "with no permissions set " do
     it "should render the index" do get :index; response.should render_template('index') end
+  end
+  
+  it "should inherit rules in a subclass" do
+    class ParentController < ActionController::Base
+      include Authoritah::Controller
+      permits :current_user
+    end
+    class ChildController < ParentController
+    end
+    ChildController.controller_permissions.size.should == 1
+    ChildController.controller_permissions.first[:role_method].should == :current_user
   end
   
   describe "specifying permit rules" do
